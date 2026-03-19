@@ -73,6 +73,7 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
+        // apiKey = 'b7176b6909c5412280e49c48ef8d5d0a';
 
         var marker;
 
@@ -163,15 +164,15 @@ out geom;
         async function getLandUse(lat, lon) {
             var radius = 100; // Radius kecil untuk akurasi titik
             var query = `
-                [out:json];
-                (
-                way["landuse"](around:${radius},${lat},${lon});
-                relation["landuse"](around:${radius},${lat},${lon});
-                way["leisure"](around:${radius},${lat},${lon});
-                );
-                out tags;
+[out:json];
+(
+way["landuse"](around:${radius},${lat},${lon});
+relation["landuse"](around:${radius},${lat},${lon});
+way["leisure"](around:${radius},${lat},${lon});
+);
+out tags;
             `;
-            var url = "https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query);
+            var url = "https://maps.mail.ru/osm/tools/overpass/api/interpreter?data=" + encodeURIComponent(query);
 
             try {
                 var res = await fetch(url);
@@ -192,13 +193,13 @@ out geom;
         async function getPopulation(lat, lon) {
             // Sebagai alternatif gratis, kita gunakan Nominatim untuk tahu nama wilayahnya dulu
             // Karena API kepadatan penduduk murni per titik koordinat sangat langka yang gratis
-            var url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+            // var url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
 
             try {
                 const response = await fetch(url, {
                     headers: {
                         'Accept': 'application/json',
-                        'User-Agent': 'MyElevationApp/1.0' // Penting agar tidak kena blokir CORS/403
+                        // 'User-Agent': 'MyElevationApp/1.0' // Penting agar tidak kena blokir CORS/403
                     }
                 });
 
@@ -207,12 +208,13 @@ out geom;
                 const data = await response.json();
                 // Logika sederhana: jika area 'urban' atau 'city' biasanya padat
                 // Di aplikasi nyata, Anda butuh GeoJSON data kepadatan per wilayah
+                console.log("Data geonames :", data);
                 var address = data.address;
                 var display = address.village || address.suburb || address.city || "Area Luar";
 
                 // Simulasi nilai (karena API populasi per titik sangat terbatas)
                 // Idealnya anda memanggil database lokal atau GeoServer sendiri
-                return "Estimasi di " + display;
+                return "Estimasi populasi di " + display;
             } catch (e) {
                 return "Data tidak tersedia";
             }
@@ -238,7 +240,7 @@ out geom;
             const riverDist = await findFeature(lat, lon, "river");
             const coastDist = await findFeature(lat, lon, "coast");
             const slope = await calculateSlope(lat, lon);
-            const landUse = await getLandUse(lat, lon);
+            // const landUse = await getLandUse(lat, lon);
             const population = await getPopulation(lat, lon);
 
             console.log("nilai elevasi: " + elevation);
@@ -249,12 +251,12 @@ out geom;
                 "Lat: " + lat.toFixed(6) + "<br>" +
                 "Lon: " + lon.toFixed(6) + "<br><hr>" +
                 "Elevation: " + elevation + " meter<br>" +
-                "Slope: " + (slope ? slope.toFixed(2) + "°" : "n/a") + "<br>" +
-                "Land Use: " + landUse + "<br>" +
+                // "Slope: " + (slope ? slope.toFixed(2) + "°" : "n/a") + "<br>" +
+                // "Land Use: " + landUse + "<br>" +
                 "Wilayah: " + population + "<br><hr>" +
                 "River Dist: " + (riverDist ? riverDist.toFixed(2) + " km" : ">5km") + "<br>" +
-                "Coast Dist: " + (coastDist ? coastDist.toFixed(2) + " km" : ">5km");
-
+                "Coast Dist: " + (coastDist ? coastDist.toFixed(2) + " km" : ">5km")
+                ;
         });
 
 
