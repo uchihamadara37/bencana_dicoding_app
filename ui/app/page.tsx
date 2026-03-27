@@ -1,12 +1,23 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
+import { Earthquake } from '@/lib/operasiFileCSV';
+import { findNearestEarthquake } from '@/lib/operasiFileCSV';
+import formatTanggalIndo from '@/lib/formatTanggalIndo';
+import { getAreaStatistics } from '@/lib/operasiFileCSV';
+import { fetchHazardPrediction, PredictionResponse } from '@/lib/requestApi';
 
 // Interface untuk State
 interface Location {
   lat: number;
   lng: number;
+}
+
+interface MapProps {
+  currentLocation: Location | null;
+  clickedLocation: Location | null;
+  setClickedLocation: (loc: Location) => void;
 }
 
 // Load Map tanpa SSR (Client Side Only)
@@ -20,6 +31,18 @@ export default function Home() {
   const [clickedLocation, setClickedLocation] = useState<Location | null>(null);
   const [currentAddress, setCurrentAddress] = useState<string>("");
   const [clickedAddress, setClickedAddress] = useState<string>("");
+
+  const [nearestEarthquake, setNearestEarthquake] = useState<Earthquake | null>(null);
+  const [nearestEquakeAddress, setNearestEarthquakeAddress] = useState<string>("");
+  // Untuk menyimpan hasil prediksi model 1
+  const [predictionModel1, setPredictionModel1] = useState<PredictionResponse | null>(null);
+
+  const [areaStats, setAreaStats] = useState<{
+    frequency: number;
+    maxMagnitude: string | number;
+    avgMagnitude: string | number;
+    avgDepth: string | number;
+  } | null>(null);
 
   // Ambil lokasi dari browser
   useEffect(() => {
@@ -50,7 +73,7 @@ export default function Home() {
       );
       const data = await response.json();
       console.log("Data reverse geocode:", data);
-       // Simpan alamat lengkap ke state
+      // Simpan alamat lengkap ke state
       return data.display_name; // Ini adalah nama lokasi lengkapnya
     } catch (error) {
       console.error("Gagal reverse geocode:", error);
@@ -81,6 +104,30 @@ export default function Home() {
       mainSection.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  const mulaiAnalisis = useCallback(async () => {
+    console.log("Memulai analisis untuk lokasi:", clickedLocation);
+    if (clickedLocation) {
+
+      // Untuk penerapan model 1
+      const nearest = await findNearestEarthquake(clickedLocation.lat, clickedLocation.lng);
+      console.log("Gempa terdekat:", nearest as Earthquake);
+      // Di sini kamu bisa menyimpan hasilnya ke state untuk ditampilkan di UI
+      setNearestEarthquake(nearest as Earthquake);
+      const nearestAddress = nearest ? await getAddress(nearest.latitude, nearest.longitude) : "";
+      setNearestEarthquakeAddress(nearestAddress);
+      const stats = await getAreaStatistics(clickedLocation.lat, clickedLocation.lng);
+      setAreaStats(stats);
+      // Mulai inferensi model 1
+      const res: PredictionResponse | null = await fetchHazardPrediction(clickedLocation.lat, clickedLocation.lng);
+      setPredictionModel1(res);
+
+      // Untuk penerapan model 2 (misalnya prediksi presentase kejadian gempa mendatang)
+      // P
+    }
+  }, [clickedLocation]);
+
+
 
   return (
     <div className="flex flex-col w-full overflow-hidden bg-gray-100">
@@ -165,8 +212,8 @@ export default function Home() {
         <aside className="w-80 bg-white z-20 p-6 overflow-y-auto rounded-lg">
           <h1 className='text-lg mb-3 font-semibold'>Petunjuk Penggunaan</h1>
           <ol className="pl-5 list-decimal list-outside" type='1'>
-            <li className="text-sm text-gray-600 mb-2">Klik pada peta untuk memilih lokasi yang ingin Anda analisis dengan mengeklik suatu wilayah di peta.</li>
-            <li className="text-sm text-gray-600 mb-2">Setelah memilih lokasi, dilakan klik tombol orange di bawah untuk memulai analisis lokasi. Sistem akan memproses data historis dan model prediktif untuk memberikan hasil analisis potensi dampak gempa .....</li>
+            <li className="text-sm text-gray-600 mb-2">Klik pada peta di Indonesia untuk memilih lokasi yang ingin Anda analisis dengan mengeklik suatu wilayah di peta. <span className='text-orange-500'>Jangan mengeklik peta di luar Indonesia, karena hasil informasinya tidak akan akurat</span></li>
+            <li className="text-sm text-gray-600 mb-2">Setelah memilih lokasi, silakan <span className='text-orange-500'>klik tombol orange</span> di bawah untuk memulai analisis lokasi. Sistem akan memproses data historis dan model prediktif untuk memberikan hasil analisis potensi dampak gempa .....</li>
             <li className="text-sm text-gray-600 mb-2">Hasil analisis akan ditampilkan di bagian bawah halaman, termasuk tingkat prediksi dampak gempa dan data historis terkait......</li>
             <li className="text-sm text-gray-600 mb-2">Gunakan informasi ini untuk meningkatkan kewaspadaan dan kesiapsiagaan terhadap potensi bencana gempa di lingkungan sekitar Anda.</li>
           </ol>
@@ -180,7 +227,7 @@ export default function Home() {
         </div>
         <div className="flex justify-center gap-5">
           <button className="isolate relative text-md rounded-2xl font-semibold
-          " onClick={() => { }}>
+          " onClick={mulaiAnalisis}>
             <div className="bg-amber-400 z-10 py-2 px-4 rounded-[inherit]">
               Mulai Analisis Lokasi
             </div>
@@ -194,19 +241,38 @@ export default function Home() {
         <div className="flex justify-center">
           <div className="flex-1 p-6 bg-white rounded-lg ">
             <h3 className="text-xl font-semibold mb-2">📊 Potensi Dampak Gempa Dari Kejadian Lampau</h3>
-            <p className="text-sm mb-4">Berdasarkan data historis dan model prediktif, berikut adalah potensi dampak bencana untuk lokasi yang Anda pilih:</p>
+            {predictionModel1 && (
+              <>
+                <p className="text-sm mb-4">Berdasarkan data historis dan model prediktif, berikut adalah potensi dampak bencana untuk lokasi yang Anda pilih:</p>
 
-            <p className="text-md mb-4"><b>Hasil:</b> Lokasi tergolong area dengan potensial dampak gempa .... </p>
+                {/* low medium high very_high */}
+                <p className="text-md mb-4"><b>Hasil:</b> Lokasi tergolong area dengan potensial dampak gempa <span className={
+                  String(predictionModel1.data.hazard_level) == 'low' ? 'text-green-600 font-bold' :
+                    String(predictionModel1.data.hazard_level) == 'medium' ? 'text-yellow-600 font-bold' :
+                      String(predictionModel1.data.hazard_level) == 'high' ? 'text-orange-600 font-bold' :
+                        String(predictionModel1.data.hazard_level) == 'very_high' ? 'text-red-700 font-bold' : ''
+                  }>{
+                    String(predictionModel1.data.hazard_level) == 'low' ? 'Rendah' :
+                      String(predictionModel1.data.hazard_level) == 'medium' ? 'Sedang' :
+                        String(predictionModel1.data.hazard_level) == 'high' ? 'Tinggi' :
+                          String(predictionModel1.data.hazard_level) == 'very_high' ? 'Sangat Tinggi' : '' 
+                  }</span></p>
+              </>
+            )}
 
-            <p className="text-sm mb-1">Lokasi cukup dekat dengan zona gempa .... dataset grid. Dengan hasil analisis data sebagai berikut:</p>
+            {nearestEarthquake && (
+              <p className="text-sm mb-1">Lokasi cukup dekat dengan zona gempa {nearestEquakeAddress}, yang terjadi pada {formatTanggalIndo(nearestEarthquake?.datetime)} dengan magnitudo sebesar {nearestEarthquake?.magnitude.toFixed(2)} Richter. Dengan hasil analisis data sebagai berikut:</p>
+            )}
 
+            {areaStats && (
+              <ul className="list-disc list-inside text-gray-600 text-sm">
+                <li>Frekuensi terjadinya gempa di area sekitar: {areaStats?.frequency}</li>
+                <li>Magnitudo terbesar yang pernah terjadi: {areaStats?.maxMagnitude} Richter</li>
+                <li>Rata-rata magnitudo: {areaStats?.avgMagnitude}</li>
+                <li>Rata-rata kedalaman sumber gempa: {areaStats?.avgDepth}</li>
+              </ul>
+            )}
 
-            <ul className="list-disc list-inside text-gray-600">
-              <li>Frekuensi terjadinya gempa di area sekitar:....</li>
-              <li>Magnitudo terbesar yang pernah terjadi: .....</li>
-              <li>Rata-rata magnitudo: ....</li>
-              <li>Rata-rata kedalaman sumber gempa: .....</li>
-            </ul>
             <p className="text-xs text-gray-500 mt-4">*Tingkatan prediksi dampak gempa dihitung berdasarkan kombinasi data historis dan model prediktif <i>Machine Learning.</i></p>
           </div>
           <div className="flex-1 p-6 bg-white rounded-lg ml-5">
