@@ -18,6 +18,8 @@ const MapWithNoSSR = dynamic(() => import('../components/MapComponents'), {
 export default function Home() {
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [clickedLocation, setClickedLocation] = useState<Location | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<string>("");
+  const [clickedAddress, setClickedAddress] = useState<string>("");
 
   // Ambil lokasi dari browser
   useEffect(() => {
@@ -35,6 +37,43 @@ export default function Home() {
       );
     }
   }, []);
+
+  const getAddress = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+        {
+          headers: {
+            "Accept-Language": "id", // Agar hasil dalam Bahasa Indonesia
+          }
+        }
+      );
+      const data = await response.json();
+      console.log("Data reverse geocode:", data);
+       // Simpan alamat lengkap ke state
+      return data.display_name; // Ini adalah nama lokasi lengkapnya
+    } catch (error) {
+      console.error("Gagal reverse geocode:", error);
+      return "Lokasi tidak diketahui";
+    }
+  };
+
+  useEffect(() => {
+    if (clickedLocation) {
+      getAddress(clickedLocation.lat, clickedLocation.lng).then((address) => {
+        console.log("Alamat lokasi yang diklik:", address);
+        setClickedAddress(address); // Simpan alamat lokasi yang diklik ke state
+      });
+    }
+  }, [clickedLocation]);
+  useEffect(() => {
+    if (currentLocation) {
+      getAddress(currentLocation.lat, currentLocation.lng).then((address) => {
+        console.log("Alamat lokasi saat ini:", address);
+        setCurrentAddress(address);
+      });
+    }
+  }, [currentLocation]);
 
   const handleScrollToMain = () => {
     const mainSection = document.getElementById('main');
@@ -115,20 +154,20 @@ export default function Home() {
       <main id='main' className="pt-10 flex flex-1 relative px-40 gap-5 pb-5">
         {/* Peta (Kiri) */}
         <div className="flex-3 z-0 bg-slate-500 rounded-lg h-125">
-          {/* <MapWithNoSSR
+          <MapWithNoSSR
             currentLocation={currentLocation}
             clickedLocation={clickedLocation}
             setClickedLocation={setClickedLocation}
-          /> */}
+          />
         </div>
 
         {/* Info Panel (Kanan) */}
         <aside className="w-80 bg-white z-20 p-6 overflow-y-auto rounded-lg">
           <h1 className='text-lg mb-3 font-semibold'>Petunjuk Penggunaan</h1>
           <ol className="pl-5 list-decimal list-outside" type='1'>
-            <li className="text-sm text-gray-600 mb-2">Klik pada peta untuk memilih lokasi yang ingin Anda analisis.</li>
-            <li className="text-sm text-gray-600 mb-2">Setelah memilih lokasi, sistem akan memproses data historis dan model prediktif untuk memberikan hasil analisis potensi dampak gempa.</li>
-            <li className="text-sm text-gray-600 mb-2">Hasil analisis akan ditampilkan di bagian bawah halaman, termasuk tingkat prediksi dampak gempa dan data historis terkait.</li>
+            <li className="text-sm text-gray-600 mb-2">Klik pada peta untuk memilih lokasi yang ingin Anda analisis dengan mengeklik suatu wilayah di peta.</li>
+            <li className="text-sm text-gray-600 mb-2">Setelah memilih lokasi, dilakan klik tombol orange di bawah untuk memulai analisis lokasi. Sistem akan memproses data historis dan model prediktif untuk memberikan hasil analisis potensi dampak gempa .....</li>
+            <li className="text-sm text-gray-600 mb-2">Hasil analisis akan ditampilkan di bagian bawah halaman, termasuk tingkat prediksi dampak gempa dan data historis terkait......</li>
             <li className="text-sm text-gray-600 mb-2">Gunakan informasi ini untuk meningkatkan kewaspadaan dan kesiapsiagaan terhadap potensi bencana gempa di lingkungan sekitar Anda.</li>
           </ol>
         </aside>
@@ -136,46 +175,14 @@ export default function Home() {
       {/* aksi tombol */}
       <div className=" px-40 mb-10">
         <div className="mb-4">
-          <h1 className="">📍Lokasi saat ini: ....</h1>
-          <h1 className="">📍Lokasi yang dipilih: ....</h1>
+          <h1 className="text-gray-500">📍<span className='font-semibold text-black'>Lokasi saat ini:</span> {currentAddress}.</h1>
+          <h1 className="text-gray-500">📍<span className='font-semibold text-black'>Lokasi yang dipilih:</span> {clickedAddress == "" ? "Belum ada yang diklik." : clickedAddress}</h1>
         </div>
         <div className="flex justify-center gap-5">
           <button className="isolate relative text-md rounded-2xl font-semibold
-          after:content-['']
-          after:absolute 
-          after:top-1/2 
-          after:left-1/2
-          after:translate-x-[-50%]
-          after:translate-y-[-50%]
-          after:w-full
-          after:h-full
-          after:z-[-1]
-          after:box-content
-          after:p-0.5
-          after:rounded-[inherit]
-          after:bg-[conic-gradient(from_var(--angle),transparent_70%,#662dbc)]
-          after:blur-[15px]
-          after:opacity-[0.7]
-
-          before:content-['']
-          before:absolute 
-          before:top-1/2 
-          before:left-1/2
-          before:translate-x-[-50%]
-          before:translate-y-[-50%]
-          before:w-full
-          before:h-full
-          before:z-[-1]
-          before:box-content
-          before:p-0.5
-          before:rounded-[inherit]
-          before:bg-[conic-gradient(from_var(--angle),transparent_70%,#662dbc)]
-          
-          after:animate-spin-slow
-          before:animate-spin-slow
           " onClick={() => { }}>
             <div className="bg-amber-400 z-10 py-2 px-4 rounded-[inherit]">
-              Mulai Analisis
+              Mulai Analisis Lokasi
             </div>
           </button>
           <button className='border border-black text-md rounded-2xl py-2 px-4' onClick={() => setClickedLocation(null)}>Reset Lokasi</button>
