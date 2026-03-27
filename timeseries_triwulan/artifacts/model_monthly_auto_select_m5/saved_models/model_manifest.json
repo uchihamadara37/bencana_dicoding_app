@@ -1,0 +1,10 @@
+{
+  "saved_models": [
+    "seasonal_naive.pkl",
+    "holtwinters_add.pkl",
+    "sarima.pkl",
+    "xgboost.pkl",
+    "lstm.keras",
+    "lstm_scaler.pkl"
+  ]
+}
