@@ -47,16 +47,35 @@ export default function Home() {
   // Ambil lokasi dari browser
   useEffect(() => {
     if (typeof window !== "undefined" && "geolocation" in navigator) {
+      const options: PositionOptions = {
+        enableHighAccuracy: true, // Meminta akurasi tertinggi (GPS)
+        timeout: 10000,           // Tunggu maksimal 10 detik
+        maximumAge: 0             // Jangan gunakan lokasi cache lama
+      };
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log("Lokasi ditemukan:", position.coords);
           setCurrentLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
         },
         (error) => {
-          console.error("Gagal mendapatkan lokasi:", error);
-        }
+          // Handle error spesifik agar kamu tahu kenapa gagal di HP
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              alert("Izin lokasi ditolak. Mohon aktifkan GPS di pengaturan browser untuk memudahkan penggunaan fitur Waspada.Gempa.");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              alert("Informasi lokasi tidak tersedia.");
+              break;
+            case error.TIMEOUT:
+              alert("Waktu permintaan lokasi habis.");
+              break;
+          }
+        },
+        options
       );
     }
   }, []);
@@ -124,10 +143,20 @@ export default function Home() {
 
       // Untuk penerapan model 2 (misalnya prediksi presentase kejadian gempa mendatang)
       // P
+    }else{
+      alert("Silakan klik pada peta untuk memilih lokasi yang ingin dianalisis.");
     }
   }, [clickedLocation]);
 
-
+  // reset lokasi, melepas mark dan atur zoom
+  const resetLocation = () => {
+    setClickedLocation(null);
+    setClickedAddress("");
+    setNearestEarthquake(null);
+    setNearestEarthquakeAddress("");
+    setAreaStats(null);
+    setPredictionModel1(null);
+  };
 
   return (
     <div className="flex flex-col w-full overflow-hidden bg-gray-100">
@@ -139,21 +168,23 @@ export default function Home() {
       {/* jumbotron */}
       <div className="text-white text-center relative">
         <img src="./images/earthquake-pictures.jpg" alt="..." className="absolute z-1 w-full h-full object-cover " />
-        <div className="after absolute z-2 w-full h-full bg-linear-to-tr from-[rgba(0,0,0,0.8)] to-[rgba(0,0,0,0.1)]"></div>
-        <div className="relative z-2 pt-32 px-4 pb-10 font-(Inter)">
+        <div className="after absolute z-2 w-full h-full bg-linear-to-tr from-[rgba(0,0,0,0.9)] to-[rgba(0,0,0,0.2)]"></div>
+        <div className="relative z-2 pt-14 lg:pt-32 px-4 pb-10 font-(Inter)">
           <h2 className="text-4xl font-bold mb-2 text-shadow-lg pb-3">Selamat Datang di <span className='text-amber-300'>Waspada</span>.Gempa</h2>
-          <p className="text-2xl font-light text-shadow-lg pb-10">Pantau potensi bencana gempa di lingkungan sekitar kita<br />dengan mudah dan cepat.</p>
+          <p className="text-base lg:text-2xl lg:px-60 xl:px-96 font-light text-shadow-lg pb-8 lg:pb-10">Pantau potensi bencana gempa di lingkungan sekitar kita dengan mudah dan cepat.</p>
 
-          <div className="flex px-20 gap-10 justify-center pb-10">
-            <div className="flex-1 max-w-120 p-4">
-              <h3 className="text-xl font-bold mb-2 text-shadow-lg">⚠️ Potensi Tingkat Bahaya Dan Dampak Gempa</h3>
-              <p className="text-md font-light text-shadow-lg text-justify">
+          <div className="flex lg:px-20 gap-10 lg:gap-14 flex-col lg:flex-row justify-center items-center lg:items-start pb-10">
+            <div className="flex-1 max-w-120">
+              <p className="text-center mb-4 text-3xl">⚠️</p>
+              <h3 className="text-base lg:text-xl font-bold mb-2 text-shadow-lg text-center lg:text-center">Potensi Tingkat Bahaya Dan Dampak Gempa</h3>
+              <p className="text-sm font-light text-shadow-lg text-justify lg:text-justify">
                 Kita dapat dengan mudah memprediksi potensi dampak gempa di lingkungan sekitar berdasarkan data kejadian gempa sebelumnya. Dengan memanfaatkan data historis dan model prediktif, kita dapat memberikan informasi yang berguna untuk meningkatkan kewaspadaan dan kesiapsiagaan terhadap potensi bencana gempa.
               </p>
             </div>
-            <div className="flex-1 max-w-120 p-4">
-              <h3 className="text-xl font-bold mb-2 text-shadow-lg">📈🎯 Prediksi Persentase Kejadian Gempa Mendatang</h3>
-              <p className="text-md font-light text-shadow-lg text-left">
+            <div className="flex-1 max-w-120">
+              <p className="text-center mb-4 text-3xl">📈</p>
+              <h3 className="text-base lg:text-xl font-bold mb-2 text-shadow-lg text-center lg:text-center">Prediksi Persentase Kejadian Gempa Mendatang</h3>
+              <p className="text-sm font-light text-shadow-lg text-justify lg:text-justify">
                 Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi cumque eligendi iste nemo dolores aperiam eveniet optio obcaecati quibusdam dolorem. Lorem ipsum dolor sit amet consectetur, adipisicing elit. Adipisci, voluptatum.
               </p>
             </div>
@@ -198,9 +229,9 @@ export default function Home() {
 
       {/* Main Content */}
 
-      <main id='main' className="pt-10 flex flex-1 relative px-40 gap-5 pb-5">
+      <main id='main' className="lg:pt-10 flex flex-col-reverse lg:flex-row relative px-5 lg:px-10 xl:px-40 gap-5 pb-5 pt-5">
         {/* Peta (Kiri) */}
-        <div className="flex-3 z-0 bg-slate-500 rounded-lg h-125">
+        <div className="lg:grow lg:w-96 z-0 bg-slate-500 rounded-lg h-125 ">
           <MapWithNoSSR
             currentLocation={currentLocation}
             clickedLocation={clickedLocation}
@@ -209,7 +240,7 @@ export default function Home() {
         </div>
 
         {/* Info Panel (Kanan) */}
-        <aside className="w-80 bg-white z-20 p-6 overflow-y-auto rounded-lg">
+        <aside className="flex-1 bg-white z-20 p-6 overflow-y-auto rounded-lg">
           <h1 className='text-lg mb-3 font-semibold'>Petunjuk Penggunaan</h1>
           <ol className="pl-5 list-decimal list-outside" type='1'>
             <li className="text-sm text-gray-600 mb-2">Klik pada peta di Indonesia untuk memilih lokasi yang ingin Anda analisis dengan mengeklik suatu wilayah di peta. <span className='text-orange-500'>Jangan mengeklik peta di luar Indonesia, karena hasil informasinya tidak akan akurat</span></li>
@@ -220,10 +251,16 @@ export default function Home() {
         </aside>
       </main>
       {/* aksi tombol */}
-      <div className=" px-40 mb-10">
+      <div className="px-5 lg:px-40 mb-10">
         <div className="mb-4">
-          <h1 className="text-gray-500">📍<span className='font-semibold text-black'>Lokasi saat ini:</span> {currentAddress}.</h1>
-          <h1 className="text-gray-500">📍<span className='font-semibold text-black'>Lokasi yang dipilih:</span> {clickedAddress == "" ? "Belum ada yang diklik." : clickedAddress}</h1>
+          <div className="flex">
+            <h1 className="">📍</h1>
+          <h1 className="font-semibold text-black ">Lokasi saat ini:<span className='font-normal text-sm lg:text-base text-gray-500'> {currentAddress}.</span></h1>
+          </div>
+          <div className="flex">
+            <h1 className="">📍</h1>
+            <h1 className="font-semibold text-black ">Lokasi yang dipilih:<span className='font-normal text-sm lg:text-base text-gray-500'> {clickedAddress == "" ? "Belum ada yang diklik." : clickedAddress}.</span></h1>
+          </div>
         </div>
         <div className="flex justify-center gap-5">
           <button className="isolate relative text-md rounded-2xl font-semibold
@@ -232,13 +269,13 @@ export default function Home() {
               Mulai Analisis Lokasi
             </div>
           </button>
-          <button className='border border-black text-md rounded-2xl py-2 px-4' onClick={() => setClickedLocation(null)}>Reset Lokasi</button>
+          <button className='border border-black text-md rounded-2xl py-2 px-4' onClick={resetLocation}>Reset Lokasi</button>
         </div>
       </div>
       {/* hasil */}
-      <div className="px-40 mb-20">
+      <div className="px-5 lg:px-10 xl:px-40 mb-20">
         <h2 className="text-3xl font-bold mb-4 text-center">Hasil Analisis Lokasi</h2>
-        <div className="flex justify-center">
+        <div className="flex flex-col lg:flex-row justify-center items-center lg:items-start gap-5">
           <div className="flex-1 p-6 bg-white rounded-lg ">
             <h3 className="text-xl font-semibold mb-2">📊 Potensi Dampak Gempa Dari Kejadian Lampau</h3>
             {predictionModel1 && (
@@ -251,11 +288,11 @@ export default function Home() {
                     String(predictionModel1.data.hazard_level) == 'medium' ? 'text-yellow-600 font-bold' :
                       String(predictionModel1.data.hazard_level) == 'high' ? 'text-orange-600 font-bold' :
                         String(predictionModel1.data.hazard_level) == 'very_high' ? 'text-red-700 font-bold' : ''
-                  }>{
+                }>{
                     String(predictionModel1.data.hazard_level) == 'low' ? 'Rendah' :
                       String(predictionModel1.data.hazard_level) == 'medium' ? 'Sedang' :
                         String(predictionModel1.data.hazard_level) == 'high' ? 'Tinggi' :
-                          String(predictionModel1.data.hazard_level) == 'very_high' ? 'Sangat Tinggi' : '' 
+                          String(predictionModel1.data.hazard_level) == 'very_high' ? 'Sangat Tinggi' : ''
                   }</span></p>
               </>
             )}
@@ -275,7 +312,7 @@ export default function Home() {
 
             <p className="text-xs text-gray-500 mt-4">*Tingkatan prediksi dampak gempa dihitung berdasarkan kombinasi data historis dan model prediktif <i>Machine Learning.</i></p>
           </div>
-          <div className="flex-1 p-6 bg-white rounded-lg ml-5">
+          <div className="flex-1 p-6 bg-white rounded-lg">
             <p className="">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Nemo nihil blanditiis labore doloribus iusto iure accusantium dolores alias tenetur et.</p>
           </div>
         </div>
