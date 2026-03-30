@@ -491,13 +491,17 @@ export default function Home() {
                 <li>
                   Frekuensi terjadinya gempa di area sekitar:{" "}
                   {areaStats?.frequency}
+                  {" kali"}
                 </li>
                 <li>
                   Magnitudo terbesar yang pernah terjadi:{" "}
                   {areaStats?.maxMagnitude} Richter
                 </li>
                 <li>Rata-rata magnitudo: {areaStats?.avgMagnitude}</li>
-                <li>Rata-rata kedalaman sumber gempa: {areaStats?.avgDepth}</li>
+                <li>
+                  Rata-rata kedalaman sumber gempa: {areaStats?.avgDepth}
+                  {" km"}
+                </li>
               </ul>
             )}
 
@@ -508,7 +512,7 @@ export default function Home() {
           </div>
           <div className="flex-1 p-6 bg-white rounded-lg">
             <h3 className="text-xl font-semibold mb-2">
-              📈 Potensi Kejadian Gempa M&gt;=5 (Akumulasi 1 Bulan)
+              📈 Potensi Kejadian Gempa Magnitude&gt;=5 (Akumulasi 1 Bulan)
             </h3>
             {!predictionModel2 && (
               <p className="text-sm text-gray-600">
@@ -521,7 +525,7 @@ export default function Home() {
               <>
                 <p className="text-sm mb-2">
                   Berdasarkan data historis dan model prediktif, dalam radius{" "}
-                  <b>{predictionModel2.data.radius_km} km</b> dari titik yang
+                  <b>{predictionModel2.data.radius_km} km </b> dari titik yang
                   Anda pilih, estimasi akumulasi kejadian gempa M&gt;=5 untuk 1
                   bulan ke depan adalah{" "}
                   <b>
