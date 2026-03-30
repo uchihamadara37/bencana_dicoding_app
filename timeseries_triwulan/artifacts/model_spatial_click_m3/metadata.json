@@ -1,0 +1,34 @@
+{
+  "data_path": "D:\\Projects\\bencana_dicoding_app\\data_gempa_kaggle\\katalog_gempa_v2.tsv",
+  "artifact_dir": "D:\\Projects\\bencana_dicoding_app\\timeseries_triwulan\\artifacts\\model_spatial_click_m3",
+  "model_path": "D:\\Projects\\bencana_dicoding_app\\timeseries_triwulan\\artifacts\\model_spatial_click_m3\\saved_models\\spatial_click_m3_twostage.joblib",
+  "grid_deg": 1.0,
+  "mag_threshold": 3.0,
+  "test_horizon": 12,
+  "feature_cols": [
+    "lag_1",
+    "lag_2",
+    "lag_3",
+    "lag_6",
+    "lag_12",
+    "roll_mean_3",
+    "roll_mean_6",
+    "roll_mean_12",
+    "roll_std_3",
+    "roll_std_6",
+    "roll_std_12",
+    "month_sin",
+    "month_cos",
+    "lat_bin",
+    "lon_bin"
+  ],
+  "n_cells": 710,
+  "n_months": 203,
+  "metrics_test": {
+    "mae_expected_count": 0.594414124042304,
+    "rmse_expected_count": 2.1717542464358086,
+    "brier_event": 0.0880880687909473,
+    "positive_rate_test": 0.26901408450704223,
+    "roc_auc_event": 0.9383687473449299
+  }
+}
