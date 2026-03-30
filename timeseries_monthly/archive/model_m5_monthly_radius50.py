@@ -21,10 +21,10 @@ ROLL_WINDOWS = [3, 6, 12]
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = (
-    PROJECT_ROOT / "timeseries_triwulan" / "data_gempa_kaggle" / "katalog_gempa.csv"
+    PROJECT_ROOT / "timeseries_monthly" / "data_gempa_kaggle" / "katalog_gempa.csv"
 )
 ARTIFACT_DIR = (
-    PROJECT_ROOT / "timeseries_triwulan" / "artifacts" / "model_m5_monthly_radius50"
+    PROJECT_ROOT / "timeseries_monthly" / "artifacts" / "model_m5_monthly_radius50"
 )
 MODEL_PATH = ARTIFACT_DIR / "saved_models" / "m5_monthly_radius50_bundle.joblib"
 
